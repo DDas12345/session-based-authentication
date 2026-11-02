@@ -1,22 +1,64 @@
 const { prisma } = require("./db");
-const { newSessionId, expiresAt } = require("./utils");
+const { newSessionId, expiresAt, publicUser } = require("./utils");
 
 async function createSession(userId) {
-  // TODO: Save a new Session with random ID, userId, and 7-day expiry. Return ID.
-  throw new Error("TODO: createSession");
+  const id = newSessionId();
+
+  await prisma.session.create({
+    data: {
+      id,
+      userId,
+      expiresAt: expiresAt(),
+    },
+  });
+
+  return id;
 }
+
 async function getSessionWithUser(id) {
-  // TODO: Find session including public user fields; delete expired session; return null if invalid.
-  throw new Error("TODO: getSessionWithUser");
+  const session = await prisma.session.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  // Session does not exist
+  if (!session) {
+    return null;
+  }
+
+  // Check whether the session has expired
+  if (session.expiresAt <= new Date()) {
+    await deleteSession(id);
+    return null;
+  }
+
+  return {
+    ...session,
+    user: publicUser(session.user),
+  };
 }
+
 async function deleteSession(id) {
-  // TODO: Delete by ID without throwing if missing.
-  throw new Error("TODO: deleteSession");
+  await prisma.session.deleteMany({
+    where: { id },
+  });
 }
+
 async function deleteAllUserSessions(userId) {
-  // TODO: Delete all sessions for this user and return count.
-  throw new Error("TODO: deleteAllUserSessions");
+  const result = await prisma.session.deleteMany({
+    where: { userId },
+  });
+
+  return result.count;
 }
+
 module.exports = {
   createSession,
   getSessionWithUser,

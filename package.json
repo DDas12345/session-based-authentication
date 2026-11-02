@@ -19,5 +19,9 @@
   },
   "devDependencies": {
     "prisma": "^7.0.0"
+  },
+  "allowScripts": {
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true
   }
 }
